@@ -17,16 +17,16 @@
 #define TAG "Assets"
 
 struct mmap_assets_table {
-    char asset_name[32];          /*!< Name of the asset */
-    uint32_t asset_size;          /*!< Size of the asset */
-    uint32_t asset_offset;        /*!< Offset of the asset */
-    uint16_t asset_width;         /*!< Width of the asset */
-    uint16_t asset_height;        /*!< Height of the asset */
+    char asset_name[32];          /*!< 资源名称 */
+    uint32_t asset_size;          /*!< 资源大小 */
+    uint32_t asset_offset;        /*!< 资源偏移量 */
+    uint16_t asset_width;         /*!< 资源宽度 */
+    uint16_t asset_height;        /*!< 资源高度 */
 };
 
 
 Assets::Assets() {
-    // Initialize the partition
+    // 初始化分区
     InitializePartition();
 }
 

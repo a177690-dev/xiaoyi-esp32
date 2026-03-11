@@ -2,16 +2,19 @@
 
 ESP_EVENT_DEFINE_BASE(XIAOZHI_STATE_EVENTS);
 
+// 获取单例实例
 DeviceStateEventManager& DeviceStateEventManager::GetInstance() {
     static DeviceStateEventManager instance;
     return instance;
 }
 
+//  注册状态变更回调函数
 void DeviceStateEventManager::RegisterStateChangeCallback(std::function<void(DeviceState, DeviceState)> callback) {
     std::lock_guard<std::mutex> lock(mutex_);
     callbacks_.push_back(callback);
 }
 
+//  发布状态变更事件
 void DeviceStateEventManager::PostStateChangeEvent(DeviceState previous_state, DeviceState current_state) {
     device_state_event_data_t event_data = {
         .previous_state = previous_state,
@@ -20,11 +23,13 @@ void DeviceStateEventManager::PostStateChangeEvent(DeviceState previous_state, D
     esp_event_post(XIAOZHI_STATE_EVENTS, XIAOZHI_STATE_CHANGED_EVENT, &event_data, sizeof(event_data), portMAX_DELAY);
 }
 
+//  获取所有回调函数（线程安全）
 std::vector<std::function<void(DeviceState, DeviceState)>> DeviceStateEventManager::GetCallbacks() {
     std::lock_guard<std::mutex> lock(mutex_);
     return callbacks_;
 }
 
+//   构造函数：初始化事件循环并注册处理器
 DeviceStateEventManager::DeviceStateEventManager() {
     esp_err_t err = esp_event_loop_create_default();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
@@ -41,6 +46,7 @@ DeviceStateEventManager::DeviceStateEventManager() {
         }, nullptr));
 }
 
+//  析构函数：注销事件处理器
 DeviceStateEventManager::~DeviceStateEventManager() {
     esp_event_handler_unregister(XIAOZHI_STATE_EVENTS, XIAOZHI_STATE_CHANGED_EVENT, nullptr);
 }

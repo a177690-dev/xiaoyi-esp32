@@ -39,7 +39,7 @@ Application::Application() {
     event_group_ = xEventGroupCreate();
 
 #if CONFIG_USE_DEVICE_AEC && CONFIG_USE_SERVER_AEC
-#error "CONFIG_USE_DEVICE_AEC and CONFIG_USE_SERVER_AEC cannot be enabled at the same time"
+#error "CONFIG_USE_DEVICE_AEC 和 CONFIG_USE_SERVER_AEC 不能同时启用"
 #elif CONFIG_USE_DEVICE_AEC
     aec_mode_ = kAecOnDeviceSide;
 #elif CONFIG_USE_SERVER_AEC
@@ -75,12 +75,12 @@ void Application::CheckAssetsVersion() {
     auto& assets = Assets::GetInstance();
 
     if (!assets.partition_valid()) {
-        ESP_LOGW(TAG, "Assets partition is disabled for board %s", BOARD_NAME);
+        ESP_LOGW(TAG, "开发板 %s 的资源分区已禁用", BOARD_NAME);
         return;
     }
     
     Settings settings("assets", true);
-    // Check if there is a new assets need to be downloaded
+    // 检查是否有需要下载的新资源
     std::string download_url = settings.GetString("download_url");
 
     if (!download_url.empty()) {
@@ -90,7 +90,7 @@ void Application::CheckAssetsVersion() {
         snprintf(message, sizeof(message), Lang::Strings::FOUND_NEW_ASSETS, download_url.c_str());
         Alert(Lang::Strings::LOADING_ASSETS, message, "cloud_arrow_down", Lang::Sounds::OGG_UPGRADE);
         
-        // Wait for the audio service to be idle for 3 seconds
+        // 等待音频服务空闲3秒
         vTaskDelay(pdMS_TO_TICKS(3000));
         SetDeviceState(kDeviceStateUpgrading);
         board.SetPowerSaveMode(false);
@@ -114,7 +114,7 @@ void Application::CheckAssetsVersion() {
         }
     }
 
-    // Apply assets
+    // 应用资源
     assets.Apply();
     display->SetChatMessage("system", "");
     display->SetEmotion("microchip_ai");
@@ -135,17 +135,17 @@ void Application::CheckNewVersion(Ota& ota) {
         if (err != ESP_OK) {
             retry_count++;
             if (retry_count >= MAX_RETRY) {
-                ESP_LOGE(TAG, "Too many retries, exit version check");
+                ESP_LOGE(TAG, "重试次数过多，退出版本检查");
                 return;
             }
 
             char error_message[128];
-            snprintf(error_message, sizeof(error_message), "code=%d, url=%s", err, ota.GetCheckVersionUrl().c_str());
+            snprintf(error_message, sizeof(error_message), "代码=%d, 网址=%s", err, ota.GetCheckVersionUrl().c_str());
             char buffer[256];
             snprintf(buffer, sizeof(buffer), Lang::Strings::CHECK_NEW_VERSION_FAILED, retry_delay, error_message);
             Alert(Lang::Strings::ERROR, buffer, "cloud_slash", Lang::Sounds::OGG_EXCLAMATION);
 
-            ESP_LOGW(TAG, "Check new version failed, retry in %d seconds (%d/%d)", retry_delay, retry_count, MAX_RETRY);
+            ESP_LOGW(TAG, "检查新版本失败，%d 秒后重试 (%d/%d)", retry_delay, retry_count, MAX_RETRY);
             for (int i = 0; i < retry_delay; i++) {
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 if (device_state_ == kDeviceStateIdle) {
@@ -160,28 +160,28 @@ void Application::CheckNewVersion(Ota& ota) {
 
         if (ota.HasNewVersion()) {
             if (UpgradeFirmware(ota)) {
-                return; // This line will never be reached after reboot
+                return; // 重启后此行代码永远不会执行
             }
-            // If upgrade failed, continue to normal operation (don't break, just fall through)
+            // 如果升级失败，继续正常操作（不中断，直接继续）
         }
 
-        // No new version, mark the current version as valid
+        // 没有新版本，将当前版本标记为有效
         ota.MarkCurrentVersionValid();
         if (!ota.HasActivationCode() && !ota.HasActivationChallenge()) {
             xEventGroupSetBits(event_group_, MAIN_EVENT_CHECK_NEW_VERSION_DONE);
-            // Exit the loop if done checking new version
+            // 检查新版本完成后退出循环
             break;
         }
 
         display->SetStatus(Lang::Strings::ACTIVATION);
-        // Activation code is shown to the user and waiting for the user to input
+        // 向用户显示激活码并等待用户输入
         if (ota.HasActivationCode()) {
             ShowActivationCode(ota.GetActivationCode(), ota.GetActivationMessage());
         }
 
-        // This will block the loop until the activation is done or timeout
+        // 这将阻塞循环，直到激活完成或超时
         for (int i = 0; i < 10; ++i) {
-            ESP_LOGI(TAG, "Activating... %d/%d", i + 1, 10);
+            ESP_LOGI(TAG, "激活中... %d/%d", i + 1, 10);
             esp_err_t err = ota.Activate();
             if (err == ESP_OK) {
                 xEventGroupSetBits(event_group_, MAIN_EVENT_CHECK_NEW_VERSION_DONE);
@@ -216,7 +216,7 @@ void Application::ShowActivationCode(const std::string& code, const std::string&
         digit_sound{'9', Lang::Sounds::OGG_9}
     }};
 
-    // This sentence uses 9KB of SRAM, so we need to wait for it to finish
+    // 这句话使用了9KB的SRAM，所以我们需要等待它完成
     Alert(Lang::Strings::ACTIVATION, message.c_str(), "link", Lang::Sounds::OGG_ACTIVATION);
 
     for (const auto& digit : code) {
@@ -229,7 +229,7 @@ void Application::ShowActivationCode(const std::string& code, const std::string&
 }
 
 void Application::Alert(const char* status, const char* message, const char* emotion, const std::string_view& sound) {
-    ESP_LOGW(TAG, "Alert [%s] %s: %s", emotion, status, message);
+    ESP_LOGW(TAG, "警报 [%s] %s: %s", emotion, status, message);
     auto display = Board::GetInstance().GetDisplay();
     display->SetStatus(status);
     display->SetEmotion(emotion);
@@ -263,7 +263,7 @@ void Application::ToggleChatState() {
     }
 
     if (!protocol_) {
-        ESP_LOGE(TAG, "Protocol not initialized");
+        ESP_LOGE(TAG, "协议未初始化");
         return;
     }
 
@@ -300,7 +300,7 @@ void Application::StartListening() {
     }
 
     if (!protocol_) {
-        ESP_LOGE(TAG, "Protocol not initialized");
+        ESP_LOGE(TAG, "协议未初始化");
         return;
     }
     
@@ -335,7 +335,7 @@ void Application::StopListening() {
         kDeviceStateSpeaking,
         kDeviceStateIdle,
     };
-    // If not valid, do nothing
+    // 如果状态无效，不执行任何操作
     if (std::find(valid_states.begin(), valid_states.end(), device_state_) == valid_states.end()) {
         return;
     }
@@ -352,13 +352,13 @@ void Application::Start() {
     auto& board = Board::GetInstance();
     SetDeviceState(kDeviceStateStarting);
 
-    /* Setup the display */
+    /* 设置显示屏 */
     auto display = board.GetDisplay();
 
-    // Print board name/version info
+    // 打印开发板名称/版本信息
     display->SetChatMessage("system", SystemInfo::GetUserAgent().c_str());
 
-    /* Setup the audio service */
+    /* 设置音频服务 */
     auto codec = board.GetAudioCodec();
     audio_service_.Initialize(codec);
     audio_service_.Start();
@@ -375,32 +375,32 @@ void Application::Start() {
     };
     audio_service_.SetCallbacks(callbacks);
 
-    // Start the main event loop task with priority 3
+    // 以优先级3启动主事件循环任务
     xTaskCreate([](void* arg) {
         ((Application*)arg)->MainEventLoop();
         vTaskDelete(NULL);
     }, "main_event_loop", 2048 * 4, this, 3, &main_event_loop_task_handle_);
 
-    /* Start the clock timer to update the status bar */
+    /* 启动时钟定时器以更新状态栏 */
     esp_timer_start_periodic(clock_timer_handle_, 1000000);
 
-    /* Wait for the network to be ready */
+    /* 等待网络就绪 */
     board.StartNetwork();
 
-    // Update the status bar immediately to show the network state
+    // 立即更新状态栏以显示网络状态
     display->UpdateStatusBar(true);
 
-    // Check for new assets version
+    // 检查资源版本
     CheckAssetsVersion();
 
-    // Check for new firmware version or get the MQTT broker address
+    // 检查新固件版本或获取MQTT代理地址
     Ota ota;
     CheckNewVersion(ota);
 
-    // Initialize the protocol
+    // 初始化协议
     display->SetStatus(Lang::Strings::LOADING_PROTOCOL);
 
-    // Add MCP common tools before initializing the protocol
+    // 在初始化协议之前添加MCP通用工具
     auto& mcp_server = McpServer::GetInstance();
     mcp_server.AddCommonTools();
     mcp_server.AddUserOnlyTools();
@@ -410,7 +410,7 @@ void Application::Start() {
     } else if (ota.HasWebsocketConfig()) {
         protocol_ = std::make_unique<WebsocketProtocol>();
     } else {
-        ESP_LOGW(TAG, "No protocol specified in the OTA config, using MQTT");
+        ESP_LOGW(TAG, "OTA配置中未指定协议，使用MQTT");
         protocol_ = std::make_unique<MqttProtocol>();
     }
 
@@ -430,7 +430,7 @@ void Application::Start() {
     protocol_->OnAudioChannelOpened([this, codec, &board]() {
         board.SetPowerSaveMode(false);
         if (protocol_->server_sample_rate() != codec->output_sample_rate()) {
-            ESP_LOGW(TAG, "Server sample rate %d does not match device output sample rate %d, resampling may cause distortion",
+            ESP_LOGW(TAG, "服务器采样率 %d 与设备输出采样率 %d 不匹配，重采样可能导致失真",
                 protocol_->server_sample_rate(), codec->output_sample_rate());
         }
     });
@@ -443,7 +443,7 @@ void Application::Start() {
         });
     });
     protocol_->OnIncomingJson([this, display](const cJSON* root) {
-        // Parse JSON data
+        // 解析JSON数据
         auto type = cJSON_GetObjectItem(root, "type");
         if (strcmp(type->valuestring, "tts") == 0) {
             auto state = cJSON_GetObjectItem(root, "state");
@@ -496,14 +496,14 @@ void Application::Start() {
         } else if (strcmp(type->valuestring, "system") == 0) {
             auto command = cJSON_GetObjectItem(root, "command");
             if (cJSON_IsString(command)) {
-                ESP_LOGI(TAG, "System command: %s", command->valuestring);
+                ESP_LOGI(TAG, "系统命令: %s", command->valuestring);
                 if (strcmp(command->valuestring, "reboot") == 0) {
-                    // Do a reboot if user requests a OTA update
+                    // 如果用户请求OTA更新，则执行重启
                     Schedule([this]() {
                         Reboot();
                     });
                 } else {
-                    ESP_LOGW(TAG, "Unknown system command: %s", command->valuestring);
+                    ESP_LOGW(TAG, "未知系统命令: %s", command->valuestring);
                 }
             }
         } else if (strcmp(type->valuestring, "alert") == 0) {
@@ -513,22 +513,22 @@ void Application::Start() {
             if (cJSON_IsString(status) && cJSON_IsString(message) && cJSON_IsString(emotion)) {
                 Alert(status->valuestring, message->valuestring, emotion->valuestring, Lang::Sounds::OGG_VIBRATION);
             } else {
-                ESP_LOGW(TAG, "Alert command requires status, message and emotion");
+                ESP_LOGW(TAG, "警报命令需要状态、消息和表情参数");
             }
 #if CONFIG_RECEIVE_CUSTOM_MESSAGE
         } else if (strcmp(type->valuestring, "custom") == 0) {
             auto payload = cJSON_GetObjectItem(root, "payload");
-            ESP_LOGI(TAG, "Received custom message: %s", cJSON_PrintUnformatted(root));
+            ESP_LOGI(TAG, "收到自定义消息: %s", cJSON_PrintUnformatted(root));
             if (cJSON_IsObject(payload)) {
                 Schedule([this, display, payload_str = std::string(cJSON_PrintUnformatted(payload))]() {
                     display->SetChatMessage("system", payload_str.c_str());
                 });
             } else {
-                ESP_LOGW(TAG, "Invalid custom message format: missing payload");
+                ESP_LOGW(TAG, "自定义消息格式无效：缺少payload");
             }
 #endif
         } else {
-            ESP_LOGW(TAG, "Unknown message type: %s", type->valuestring);
+            ESP_LOGW(TAG, "未知消息类型: %s", type->valuestring);
         }
     });
     bool protocol_started = protocol_->Start();
@@ -541,12 +541,12 @@ void Application::Start() {
         std::string message = std::string(Lang::Strings::VERSION) + ota.GetCurrentVersion();
         display->ShowNotification(message.c_str());
         display->SetChatMessage("system", "");
-        // Play the success sound to indicate the device is ready
+        // 播放成功音效表示设备已就绪
         audio_service_.PlaySound(Lang::Sounds::OGG_SUCCESS);
     }
 }
 
-// Add a async task to MainLoop
+// 向主循环添加异步任务
 void Application::Schedule(std::function<void()> callback) {
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -555,9 +555,9 @@ void Application::Schedule(std::function<void()> callback) {
     xEventGroupSetBits(event_group_, MAIN_EVENT_SCHEDULE);
 }
 
-// The Main Event Loop controls the chat state and websocket connection
-// If other tasks need to access the websocket or chat state,
-// they should use Schedule to call this function
+// 主事件循环控制聊天状态和WebSocket连接
+// 如果其他任务需要访问WebSocket或聊天状态，
+// 应使用Schedule调用此函数
 void Application::MainEventLoop() {
     while (true) {
         auto bits = xEventGroupWaitBits(event_group_, MAIN_EVENT_SCHEDULE |
@@ -605,7 +605,7 @@ void Application::MainEventLoop() {
             auto display = Board::GetInstance().GetDisplay();
             display->UpdateStatusBar();
         
-            // Print the debug info every 10 seconds
+            // 每10秒打印调试信息
             if (clock_ticks_ % 10 == 0) {
                 // SystemInfo::PrintTaskCpuUsage(pdMS_TO_TICKS(1000));
                 // SystemInfo::PrintTaskList();
@@ -632,18 +632,18 @@ void Application::OnWakeWordDetected() {
         }
 
         auto wake_word = audio_service_.GetLastWakeWord();
-        ESP_LOGI(TAG, "Wake word detected: %s", wake_word.c_str());
+        ESP_LOGI(TAG, "检测到唤醒词: %s", wake_word.c_str());
 #if CONFIG_SEND_WAKE_WORD_DATA
-        // Encode and send the wake word data to the server
+        // 编码并将唤醒词数据发送到服务器
         while (auto packet = audio_service_.PopWakeWordPacket()) {
             protocol_->SendAudio(std::move(packet));
         }
-        // Set the chat state to wake word detected
+        // 将聊天状态设置为检测到唤醒词
         protocol_->SendWakeWordDetected(wake_word);
         SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
 #else
         SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
-        // Play the pop up sound to indicate the wake word is detected
+        // 播放弹出音效表示检测到唤醒词
         audio_service_.PlaySound(Lang::Sounds::OGG_POPUP);
 #endif
     } else if (device_state_ == kDeviceStateSpeaking) {
@@ -654,7 +654,7 @@ void Application::OnWakeWordDetected() {
 }
 
 void Application::AbortSpeaking(AbortReason reason) {
-    ESP_LOGI(TAG, "Abort speaking");
+    ESP_LOGI(TAG, "中止说话");
     aborted_ = true;
     if (protocol_) {
         protocol_->SendAbortSpeaking(reason);
@@ -674,9 +674,9 @@ void Application::SetDeviceState(DeviceState state) {
     clock_ticks_ = 0;
     auto previous_state = device_state_;
     device_state_ = state;
-    ESP_LOGI(TAG, "STATE: %s", STATE_STRINGS[device_state_]);
+    ESP_LOGI(TAG, "状态: %s", STATE_STRINGS[device_state_]);
 
-    // Send the state change event
+    // 发送状态变更事件
     DeviceStateEventManager::GetInstance().PostStateChangeEvent(previous_state, state);
 
     auto& board = Board::GetInstance();
@@ -700,9 +700,9 @@ void Application::SetDeviceState(DeviceState state) {
             display->SetStatus(Lang::Strings::LISTENING);
             display->SetEmotion("neutral");
 
-            // Make sure the audio processor is running
+            // 确保音频处理器正在运行
             if (!audio_service_.IsAudioProcessorRunning()) {
-                // Send the start listening command
+                // 发送开始监听命令
                 protocol_->SendStartListening(listening_mode_);
                 audio_service_.EnableVoiceProcessing(true);
                 audio_service_.EnableWakeWordDetection(false);
@@ -713,20 +713,20 @@ void Application::SetDeviceState(DeviceState state) {
 
             if (listening_mode_ != kListeningModeRealtime) {
                 audio_service_.EnableVoiceProcessing(false);
-                // Only AFE wake word can be detected in speaking mode
+                // 在说话模式下只能检测AFE唤醒词
                 audio_service_.EnableWakeWordDetection(audio_service_.IsAfeWakeWord());
             }
             audio_service_.ResetDecoder();
             break;
         default:
-            // Do nothing
+            // 不执行任何操作
             break;
     }
 }
 
 void Application::Reboot() {
-    ESP_LOGI(TAG, "Rebooting...");
-    // Disconnect the audio channel
+    ESP_LOGI(TAG, "重启中...");
+    // 断开音频通道
     if (protocol_ && protocol_->IsAudioChannelOpened()) {
         protocol_->CloseAudioChannel();
     }
@@ -741,16 +741,16 @@ bool Application::UpgradeFirmware(Ota& ota, const std::string& url) {
     auto& board = Board::GetInstance();
     auto display = board.GetDisplay();
     
-    // Use provided URL or get from OTA object
+    // 使用提供的URL或从OTA对象获取
     std::string upgrade_url = url.empty() ? ota.GetFirmwareUrl() : url;
-    std::string version_info = url.empty() ? ota.GetFirmwareVersion() : "(Manual upgrade)";
+    std::string version_info = url.empty() ? ota.GetFirmwareVersion() : "(手动升级)";
     
-    // Close audio channel if it's open
+    // 如果音频通道打开，先关闭它
     if (protocol_ && protocol_->IsAudioChannelOpened()) {
-        ESP_LOGI(TAG, "Closing audio channel before firmware upgrade");
+        ESP_LOGI(TAG, "固件升级前关闭音频通道");
         protocol_->CloseAudioChannel();
     }
-    ESP_LOGI(TAG, "Starting firmware upgrade from URL: %s", upgrade_url.c_str());
+    ESP_LOGI(TAG, "开始从URL升级固件: %s", upgrade_url.c_str());
     
     Alert(Lang::Strings::OTA_UPGRADE, Lang::Strings::UPGRADING, "download", Lang::Sounds::OGG_UPGRADE);
     vTaskDelay(pdMS_TO_TICKS(3000));
@@ -773,18 +773,18 @@ bool Application::UpgradeFirmware(Ota& ota, const std::string& url) {
     });
 
     if (!upgrade_success) {
-        // Upgrade failed, restart audio service and continue running
-        ESP_LOGE(TAG, "Firmware upgrade failed, restarting audio service and continuing operation...");
-        audio_service_.Start(); // Restart audio service
-        board.SetPowerSaveMode(true); // Restore power save mode
+        // 升级失败，重新启动音频服务并继续运行
+        ESP_LOGE(TAG, "固件升级失败，重新启动音频服务并继续操作...");
+        audio_service_.Start(); // 重新启动音频服务
+        board.SetPowerSaveMode(true); // 恢复省电模式
         Alert(Lang::Strings::ERROR, Lang::Strings::UPGRADE_FAILED, "circle_xmark", Lang::Sounds::OGG_EXCLAMATION);
         vTaskDelay(pdMS_TO_TICKS(3000));
         return false;
     } else {
-        // Upgrade success, reboot immediately
-        ESP_LOGI(TAG, "Firmware upgrade successful, rebooting...");
-        display->SetChatMessage("system", "Upgrade successful, rebooting...");
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Brief pause to show message
+        // 升级成功，立即重启
+        ESP_LOGI(TAG, "固件升级成功，重启中...");
+        display->SetChatMessage("system", "升级成功，重启中...");
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 短暂暂停以显示消息
         Reboot();
         return true;
     }
@@ -806,18 +806,18 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
             }
         }
 
-        ESP_LOGI(TAG, "Wake word detected: %s", wake_word.c_str());
+        ESP_LOGI(TAG, "检测到唤醒词: %s", wake_word.c_str());
 #if CONFIG_USE_AFE_WAKE_WORD || CONFIG_USE_CUSTOM_WAKE_WORD
-        // Encode and send the wake word data to the server
+        // 编码并将唤醒词数据发送到服务器
         while (auto packet = audio_service_.PopWakeWordPacket()) {
             protocol_->SendAudio(std::move(packet));
         }
-        // Set the chat state to wake word detected
+        // 将聊天状态设置为检测到唤醒词
         protocol_->SendWakeWordDetected(wake_word);
         SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
 #else
         SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop : kListeningModeRealtime);
-        // Play the pop up sound to indicate the wake word is detected
+        // 播放弹出音效表示检测到唤醒词
         audio_service_.PlaySound(Lang::Sounds::OGG_POPUP);
 #endif
     } else if (device_state_ == kDeviceStateSpeaking) {
@@ -846,7 +846,7 @@ bool Application::CanEnterSleepMode() {
         return false;
     }
 
-    // Now it is safe to enter sleep mode
+    // 现在可以安全进入睡眠模式
     return true;
 }
 
@@ -855,7 +855,7 @@ void Application::SendMcpMessage(const std::string& payload) {
         return;
     }
 
-    // Make sure you are using main thread to send MCP message
+    // 确保使用主线程发送MCP消息
     if (xTaskGetCurrentTaskHandle() == main_event_loop_task_handle_) {
         protocol_->SendMcpMessage(payload);
     } else {
@@ -885,7 +885,7 @@ void Application::SetAecMode(AecMode mode) {
             break;
         }
 
-        // If the AEC mode is changed, close the audio channel
+        // 如果AEC模式改变，关闭音频通道
         if (protocol_ && protocol_->IsAudioChannelOpened()) {
             protocol_->CloseAudioChannel();
         }

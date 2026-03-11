@@ -17,7 +17,7 @@
 size_t SystemInfo::GetFlashSize() {
     uint32_t flash_size;
     if (esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get flash size");
+        ESP_LOGE(TAG, "获取闪存大小失败");
         return 0;
     }
     return (size_t)flash_size;
@@ -61,14 +61,14 @@ esp_err_t SystemInfo::PrintTaskCpuUsage(TickType_t xTicksToWait) {
     esp_err_t ret;
     uint32_t total_elapsed_time;
 
-    //Allocate array to store current task states
+    // 分配数组存储当前任务状态
     start_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
     start_array = (TaskStatus_t*)malloc(sizeof(TaskStatus_t) * start_array_size);
     if (start_array == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto exit;
     }
-    //Get current task states
+    // 获取当前任务状态
     start_array_size = uxTaskGetSystemState(start_array, start_array_size, &start_run_time);
     if (start_array_size == 0) {
         ret = ESP_ERR_INVALID_SIZE;
@@ -77,41 +77,41 @@ esp_err_t SystemInfo::PrintTaskCpuUsage(TickType_t xTicksToWait) {
 
     vTaskDelay(xTicksToWait);
 
-    //Allocate array to store tasks states post delay
+    // 分配数组存储延迟后的任务状态
     end_array_size = uxTaskGetNumberOfTasks() + ARRAY_SIZE_OFFSET;
     end_array = (TaskStatus_t*)malloc(sizeof(TaskStatus_t) * end_array_size);
     if (end_array == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto exit;
     }
-    //Get post delay task states
+    // 获取延迟后的任务状态
     end_array_size = uxTaskGetSystemState(end_array, end_array_size, &end_run_time);
     if (end_array_size == 0) {
         ret = ESP_ERR_INVALID_SIZE;
         goto exit;
     }
 
-    //Calculate total_elapsed_time in units of run time stats clock period.
+    // 以运行时间统计时钟周期为单位计算总运行时间
     total_elapsed_time = (end_run_time - start_run_time);
     if (total_elapsed_time == 0) {
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
 
-    printf("| Task | Run Time | Percentage\n");
-    //Match each task in start_array to those in the end_array
+    printf("| 任务 | 运行时间 | 百分比\n");
+    // 将 start_array 中的每个任务与 end_array 中的任务匹配
     for (int i = 0; i < start_array_size; i++) {
         int k = -1;
         for (int j = 0; j < end_array_size; j++) {
             if (start_array[i].xHandle == end_array[j].xHandle) {
                 k = j;
-                //Mark that task have been matched by overwriting their handles
+                // 通过覆盖句柄标记任务已匹配
                 start_array[i].xHandle = NULL;
                 end_array[j].xHandle = NULL;
                 break;
             }
         }
-        //Check if matching task found
+        // 检查是否找到匹配的任务
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * CONFIG_FREERTOS_NUMBER_OF_CORES);
@@ -119,20 +119,20 @@ esp_err_t SystemInfo::PrintTaskCpuUsage(TickType_t xTicksToWait) {
         }
     }
 
-    //Print unmatched tasks
+    // 打印未匹配的任务
     for (int i = 0; i < start_array_size; i++) {
         if (start_array[i].xHandle != NULL) {
-            printf("| %s | Deleted\n", start_array[i].pcTaskName);
+            printf("| %s | 已删除\n", start_array[i].pcTaskName);
         }
     }
     for (int i = 0; i < end_array_size; i++) {
         if (end_array[i].xHandle != NULL) {
-            printf("| %s | Created\n", end_array[i].pcTaskName);
+            printf("| %s | 已创建\n", end_array[i].pcTaskName);
         }
     }
     ret = ESP_OK;
 
-exit:    //Common return path
+exit:    // 公共返回路径
     free(start_array);
     free(end_array);
     return ret;
@@ -141,11 +141,11 @@ exit:    //Common return path
 void SystemInfo::PrintTaskList() {
     char buffer[1000];
     vTaskList(buffer);
-    ESP_LOGI(TAG, "Task list: \n%s", buffer);
+    ESP_LOGI(TAG, "任务列表: \n%s", buffer);
 }
 
 void SystemInfo::PrintHeapStats() {
     int free_sram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     int min_free_sram = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
-    ESP_LOGI(TAG, "free sram: %u minimal sram: %u", free_sram, min_free_sram);
+    ESP_LOGI(TAG, "空闲 SRAM: %u 最小 SRAM: %u", free_sram, min_free_sram);
 }

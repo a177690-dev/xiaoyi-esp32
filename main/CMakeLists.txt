@@ -1,4 +1,4 @@
-# Define source files
+# 定义源文件
 set(SOURCES "audio/audio_codec.cc"
             "audio/audio_service.cc"
             "audio/codecs/no_audio_codec.cc"
@@ -40,13 +40,13 @@ set(SOURCES "audio/audio_codec.cc"
 
 set(INCLUDE_DIRS "." "display" "display/lvgl_display" "display/lvgl_display/jpg" "audio" "protocols")
 
-# Add board common files
+# 添加板级通用文件
 file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)
 list(APPEND SOURCES ${BOARD_COMMON_SOURCES})
 list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
 
 idf_build_get_property(build_components BUILD_COMPONENTS)
-# Function to find component dynamically by pattern
+# 动态按模式查找组件的函数
 function(find_component_by_pattern PATTERN COMPONENT_VAR PATH_VAR)
     foreach(COMPONENT ${build_components})
         if(COMPONENT MATCHES "${PATTERN}")
@@ -58,12 +58,12 @@ function(find_component_by_pattern PATTERN COMPONENT_VAR PATH_VAR)
     endforeach()
 endfunction()
 
-# Set default BUILTIN_TEXT_FONT and BUILTIN_ICON_FONT
+# 设置默认的 BUILTIN_TEXT_FONT 和 BUILTIN_ICON_FONT
 set(BUILTIN_TEXT_FONT font_puhui_14_1)
 set(BUILTIN_ICON_FONT font_awesome_14_1)
 
-# Add board files according to BOARD_TYPE
-# Set default assets if the board uses partition table V2
+# 根据 BOARD_TYPE 添加板级文件
+# 如果开发板使用分区表 V2，则设置默认资源文件
 if(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI)
     set(BOARD_TYPE "bread-compact-wifi")
     set(BUILTIN_TEXT_FONT font_puhui_basic_14_1)
@@ -205,7 +205,7 @@ elseif(CONFIG_BOARD_TYPE_ESP_SPOT_C5)
     set(BOARD_TYPE "esp-spot")
 elseif(CONFIG_BOARD_TYPE_ESP_HI)
     set(BOARD_TYPE "esp-hi")
-    # Set ESP_HI emoji directory for DEFAULT_ASSETS_EXTRA_FILES
+    # 设置 ESP_HI 表情目录的 DEFAULT_ASSETS_EXTRA_FILES
     set(DEFAULT_ASSETS_EXTRA_FILES "${CMAKE_BINARY_DIR}/emoji")
 elseif(CONFIG_BOARD_TYPE_ECHOEAR)
     set(BOARD_TYPE "echoear")
@@ -653,25 +653,25 @@ elseif(CONFIG_LANGUAGE_SR_RS)
     set(LANG_DIR "sr-RS")
 endif()
 
-# Define generation path
+# 定义生成路径
 set(LANG_JSON "${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/${LANG_DIR}/language.json")
 set(LANG_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/assets/lang_config.h")
 
-# Collect current language audio files
+# 收集当前语言的音频文件
 file(GLOB LANG_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/${LANG_DIR}/*.ogg)
 
-# If not en-US, collect en-US audio files as fallback for missing files
+# 如非 en-US，则收集 en-US 音频文件作为缺失文件的备用
 if(NOT LANG_DIR STREQUAL "en-US")
     file(GLOB EN_US_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/en-US/*.ogg)
     
-    # Extract filenames (without path) from current language
+    # 从当前语言中提取文件名（不含路径）
     set(EXISTING_NAMES "")
     foreach(SOUND_FILE ${LANG_SOUNDS})
         get_filename_component(FILENAME ${SOUND_FILE} NAME)
         list(APPEND EXISTING_NAMES ${FILENAME})
     endforeach()
     
-    # Only add en-US audio files that are missing in current language
+    # O仅添加当前语言中缺失的 en-US 音频文件
     foreach(EN_SOUND ${EN_US_SOUNDS})
         get_filename_component(FILENAME ${EN_SOUND} NAME)
         if(NOT ${FILENAME} IN_LIST EXISTING_NAMES)
@@ -683,7 +683,7 @@ endif()
 
 file(GLOB COMMON_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/common/*.ogg)
 
-# If target chip is ESP32, exclude specific files to avoid build errors
+# 如果目标芯片是 ESP32，则排除特定文件以避免构建错误
 if(CONFIG_IDF_TARGET_ESP32)
     list(REMOVE_ITEM SOURCES "audio/codecs/box_audio_codec.cc"
                              "audio/codecs/es8388_audio_codec.cc"
@@ -701,8 +701,8 @@ idf_component_register(SRCS ${SOURCES}
                     WHOLE_ARCHIVE
                     )
 
-# Use target_compile_definitions to define BOARD_TYPE, BOARD_NAME
-# If BOARD_NAME is empty, use BOARD_TYPE
+# 使用 target_compile_definitions 来定义 BOARD_TYPE 和 BOARD_NAME
+# 如果 BOARD_NAME 为空，则使用 BOARD_TYPE
 if(NOT BOARD_NAME)
     set(BOARD_NAME ${BOARD_TYPE})
 endif()
@@ -711,7 +711,7 @@ target_compile_definitions(${COMPONENT_LIB}
                     PRIVATE BUILTIN_TEXT_FONT=${BUILTIN_TEXT_FONT} BUILTIN_ICON_FONT=${BUILTIN_ICON_FONT}
                     )
 
-# Add generation rules
+# 添加生成规则
 add_custom_command(
     OUTPUT ${LANG_HEADER}
     COMMAND python ${PROJECT_DIR}/scripts/gen_lang.py
@@ -723,18 +723,18 @@ add_custom_command(
     COMMENT "Generating ${LANG_DIR} language config"
 )
 
-# Force build generation dependencies
+# 强制构建生成依赖
 add_custom_target(lang_header ALL
     DEPENDS ${LANG_HEADER}
 )
 
-# Find ESP-SR component dynamically
+# 动态查找 ESP-SR 组件
 find_component_by_pattern("espressif__esp-sr" ESP_SR_COMPONENT ESP_SR_COMPONENT_PATH)
 if(ESP_SR_COMPONENT_PATH)
     set(ESP_SR_MODEL_PATH "${ESP_SR_COMPONENT_PATH}/model")
 endif()
 
-# Find xiaozhi-fonts component dynamically
+# 动态查找 xiaozhi-fonts 组件
 find_component_by_pattern("xiaozhi-fonts" XIAOZHI_FONTS_COMPONENT XIAOZHI_FONTS_COMPONENT_PATH)
 if(XIAOZHI_FONTS_COMPONENT_PATH)
     set(XIAOZHI_FONTS_PATH "${XIAOZHI_FONTS_COMPONENT_PATH}")
@@ -745,7 +745,7 @@ set(URL "https://github.com/espressif2022/image_player/raw/main/test_apps/test_8
 set(EMOJI_DIR "${CMAKE_BINARY_DIR}/emoji")
 file(MAKE_DIRECTORY ${EMOJI_DIR})
 
-# List all files to download
+# 列出所有要下载的文件
 set(FILES_TO_DOWNLOAD "")
 list(APPEND FILES_TO_DOWNLOAD "Anger_enter.aaf" "Anger_loop.aaf" "Anger_return.aaf")
 list(APPEND FILES_TO_DOWNLOAD "happy_enter.aaf" "happy_loop.aaf" "happ_return.aaf")
@@ -761,7 +761,7 @@ foreach(FILENAME IN LISTS FILES_TO_DOWNLOAD)
     set(REMOTE_FILE "${URL}/${FILENAME}")
     set(LOCAL_FILE "${EMOJI_DIR}/${FILENAME}")
     
-    # Check if local file exists
+    # 检查本地文件是否存在
     if(EXISTS ${LOCAL_FILE})
         message(STATUS "File ${FILENAME} already exists, skipping download")
     else()
@@ -778,28 +778,28 @@ endforeach()
 endif()
 
 
-# Function to build default assets based on configuration
+# 基于配置构建默认资源文件的函数
 function(build_default_assets_bin)
-    # Set output path for generated assets.bin
+    # 设置生成的 assets.bin 的输出路径
     set(GENERATED_ASSETS_BIN "${CMAKE_BINARY_DIR}/generated_assets.bin")
     
-    # Prepare arguments for build script
+    # 为构建脚本准备参数
     set(BUILD_ARGS
         "--sdkconfig" "${SDKCONFIG}"
         "--output" "${GENERATED_ASSETS_BIN}"
     )
     
-    # Add builtin text font if defined
+    # 如果已定义，则添加内置文本字体
     if(BUILTIN_TEXT_FONT)
         list(APPEND BUILD_ARGS "--builtin_text_font" "${BUILTIN_TEXT_FONT}")
     endif()
     
-    # Add default emoji collection if defined
+    # 如果已定义，则添加默认表情集
     if(DEFAULT_EMOJI_COLLECTION)
         list(APPEND BUILD_ARGS "--emoji_collection" "${DEFAULT_EMOJI_COLLECTION}")
     endif()
     
-    # Add default assets extra files if defined
+    # 如果已定义，则添加默认资源额外文件
     if(DEFAULT_ASSETS_EXTRA_FILES)
         list(APPEND BUILD_ARGS "--extra_files" "${DEFAULT_ASSETS_EXTRA_FILES}")
     endif()
@@ -807,7 +807,7 @@ function(build_default_assets_bin)
     list(APPEND BUILD_ARGS "--esp_sr_model_path" "${ESP_SR_MODEL_PATH}")
     list(APPEND BUILD_ARGS "--xiaozhi_fonts_path" "${XIAOZHI_FONTS_PATH}")
     
-    # Create custom command to build assets
+    # 创建自定义命令来构建资源
     add_custom_command(
         OUTPUT ${GENERATED_ASSETS_BIN}
         COMMAND python ${PROJECT_DIR}/scripts/build_default_assets.py ${BUILD_ARGS}
@@ -818,63 +818,63 @@ function(build_default_assets_bin)
         VERBATIM
     )
     
-    # Create target for generated assets
+    # 为生成的资源创建目标
     add_custom_target(generated_default_assets ALL
         DEPENDS ${GENERATED_ASSETS_BIN}
     )
     
-    # Set the generated file path in parent scope
+    # 在父作用域中设置生成的文件路径
     set(GENERATED_ASSETS_LOCAL_FILE ${GENERATED_ASSETS_BIN} PARENT_SCOPE)
     
     message(STATUS "Default assets build configured: ${GENERATED_ASSETS_BIN}")
 endfunction()
 
 
-# Function to get local assets file path (handles both URL and local file)
+# 获取本地资源文件路径的函数（可处理URL和本地文件）
 function(get_assets_local_file assets_source assets_local_file_var)
-    # Check if it's a URL (starts with http:// or https://)
+    # 检查是否为URL（以 http:// 或 https:// 开头）
     if(assets_source MATCHES "^https?://")
-        # It's a URL, download it
+        # 这是一个URL，下载它
         get_filename_component(ASSETS_FILENAME "${assets_source}" NAME)
         set(ASSETS_LOCAL_FILE "${CMAKE_BINARY_DIR}/${ASSETS_FILENAME}")
         set(ASSETS_TEMP_FILE "${CMAKE_BINARY_DIR}/${ASSETS_FILENAME}.tmp")
         
-        # Check if local file exists
+        # 检查本地文件是否存在
         if(EXISTS ${ASSETS_LOCAL_FILE})
             message(STATUS "Assets file ${ASSETS_FILENAME} already exists, skipping download")
         else()
             message(STATUS "Downloading ${ASSETS_FILENAME}")
             
-            # Clean up any existing temp file
+            # 清理所有已存在的临时文件
             if(EXISTS ${ASSETS_TEMP_FILE})
                 file(REMOVE ${ASSETS_TEMP_FILE})
             endif()
             
-            # Download to temporary file first
+            # 先下载到临时文件
             file(DOWNLOAD ${assets_source} ${ASSETS_TEMP_FILE}
                  STATUS DOWNLOAD_STATUS)
             list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
             if(NOT STATUS_CODE EQUAL 0)
-                # Clean up temp file on failure
+                # 若失败，则清理临时文件
                 if(EXISTS ${ASSETS_TEMP_FILE})
                     file(REMOVE ${ASSETS_TEMP_FILE})
                 endif()
                 message(FATAL_ERROR "Failed to download ${ASSETS_FILENAME} from ${assets_source}")
             endif()
             
-            # Move temp file to final location (atomic operation)
+            # 将临时文件移动到最终位置（原子操作）
             file(RENAME ${ASSETS_TEMP_FILE} ${ASSETS_LOCAL_FILE})
             message(STATUS "Successfully downloaded ${ASSETS_FILENAME}")
         endif()
     else()
-        # It's a local file path
+        # 这是一个本地文件路径
         if(IS_ABSOLUTE "${assets_source}")
             set(ASSETS_LOCAL_FILE "${assets_source}")
         else()
             set(ASSETS_LOCAL_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${assets_source}")
         endif()
         
-        # Check if local file exists
+        # 检查本地文件是否存在
         if(NOT EXISTS ${ASSETS_LOCAL_FILE})
             message(FATAL_ERROR "Assets file not found: ${ASSETS_LOCAL_FILE}")
         endif()
@@ -889,14 +889,14 @@ endfunction()
 partition_table_get_partition_info(size "--partition-name assets" "size")
 partition_table_get_partition_info(offset "--partition-name assets" "offset")
 if ("${size}" AND "${offset}")
-    # Flash assets based on configuration
+    # Flash 资源（基于配置）
     if(CONFIG_FLASH_DEFAULT_ASSETS)
-        # Build default assets based on configuration
+        # 根据配置构建默认资源
         build_default_assets_bin()
         esptool_py_flash_to_partition(flash "assets" "${GENERATED_ASSETS_LOCAL_FILE}")
         message(STATUS "Generated default assets flash configured: ${GENERATED_ASSETS_LOCAL_FILE} -> assets partition")
     elseif(CONFIG_FLASH_CUSTOM_ASSETS)
-        # Flash custom assets
+        # Flash 自定义资源
         get_assets_local_file("${CONFIG_CUSTOM_ASSETS_FILE}" ASSETS_LOCAL_FILE)
         esptool_py_flash_to_partition(flash "assets" "${ASSETS_LOCAL_FILE}")
         message(STATUS "Custom assets flash configured: ${ASSETS_LOCAL_FILE} -> assets partition")
