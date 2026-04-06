@@ -356,7 +356,7 @@ void Application::Start() {
     auto display = board.GetDisplay();
 
     // 打印开发板名称/版本信息
-    display->SetChatMessage("system", SystemInfo::GetUserAgent().c_str());
+    // display->SetChatMessage("system", SystemInfo::GetUserAgent().c_str());
 
     /* 设置音频服务 */
     auto codec = board.GetAudioCodec();
@@ -538,8 +538,8 @@ void Application::Start() {
 
     has_server_time_ = ota.HasServerTime();
     if (protocol_started) {
-        std::string message = std::string(Lang::Strings::VERSION) + ota.GetCurrentVersion();
-        display->ShowNotification(message.c_str());
+        // std::string message = std::string(Lang::Strings::VERSION) + ota.GetCurrentVersion();
+        // display->ShowNotification(message.c_str());
         display->SetChatMessage("system", "");
         // 播放成功音效表示设备已就绪
         audio_service_.PlaySound(Lang::Sounds::OGG_SUCCESS);

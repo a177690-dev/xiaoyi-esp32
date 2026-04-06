@@ -25,13 +25,13 @@
 
 
 /*
- * There are two types of audio data flow:
- * 1. (MIC) -> [Processors] -> {Encode Queue} -> [Opus Encoder] -> {Send Queue} -> (Server)
- * 2. (Server) -> {Decode Queue} -> [Opus Decoder] -> {Playback Queue} -> (Speaker)
+ * 音频数据流有两种类型：
+ * 1. (麦克风) -> [处理器] -> {编码队列} -> [Opus编码器] -> {发送队列} -> (服务器)
+ * 2. (服务器) -> {解码队列} -> [Opus解码器] -> {播放队列} -> (扬声器)
  *
- * We use one task for MIC / Speaker / Processors, and one task for Opus Encoder / Opus Decoder.
+ * 我们使用一个任务处理麦克风/扬声器/处理器，另一个任务处理Opus编码器/Opus解码器。
  * 
- * Decode Queue and Send Queue are the main queues, because Opus packets are quite smaller than PCM packets.
+ * 解码队列和发送队列是主队列，因为Opus数据包比PCM数据包小得多。
  * 
  */
 
@@ -126,7 +126,7 @@ private:
 
     EventGroupHandle_t event_group_;
 
-    // Audio encode / decode
+    // 音频编码/解码
     TaskHandle_t audio_input_task_handle_ = nullptr;
     TaskHandle_t audio_output_task_handle_ = nullptr;
     TaskHandle_t opus_codec_task_handle_ = nullptr;
@@ -137,7 +137,7 @@ private:
     std::deque<std::unique_ptr<AudioStreamPacket>> audio_testing_queue_;
     std::deque<std::unique_ptr<AudioTask>> audio_encode_queue_;
     std::deque<std::unique_ptr<AudioTask>> audio_playback_queue_;
-    // For server AEC
+    // 用于服务器端回声消除
     std::deque<uint32_t> timestamp_queue_;
 
     bool wake_word_initialized_ = false;

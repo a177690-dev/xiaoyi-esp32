@@ -21,7 +21,7 @@ WebsocketProtocol::~WebsocketProtocol() {
 }
 
 bool WebsocketProtocol::Start() {
-    // Only connect to server when audio channel is needed
+    // 仅在需要音频通道时才连接到服务器
     return true;
 }
 
@@ -63,7 +63,7 @@ bool WebsocketProtocol::SendText(const std::string& text) {
     }
 
     if (!websocket_->Send(text)) {
-        ESP_LOGE(TAG, "Failed to send text: %s", text.c_str());
+        ESP_LOGE(TAG, "发送文本失败: %s", text.c_str());
         SetError(Lang::Strings::SERVER_ERROR);
         return false;
     }
@@ -93,12 +93,12 @@ bool WebsocketProtocol::OpenAudioChannel() {
     auto network = Board::GetInstance().GetNetwork();
     websocket_ = network->CreateWebSocket(1);
     if (websocket_ == nullptr) {
-        ESP_LOGE(TAG, "Failed to create websocket");
+        ESP_LOGE(TAG, "创建WebSocket失败");
         return false;
     }
 
     if (!token.empty()) {
-        // If token not has a space, add "Bearer " prefix
+        // 如果令牌中没有空格，添加"Bearer "前缀
         if (token.find(" ") == std::string::npos) {
             token = "Bearer " + token;
         }
@@ -145,7 +145,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
                 }
             }
         } else {
-            // Parse JSON data
+            // 解析JSON数据
             auto root = cJSON_Parse(data);
             auto type = cJSON_GetObjectItem(root, "type");
             if (cJSON_IsString(type)) {
@@ -157,7 +157,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
                     }
                 }
             } else {
-                ESP_LOGE(TAG, "Missing message type, data: %s", data);
+                ESP_LOGE(TAG, "缺少消息类型，数据: %s", data);
             }
             cJSON_Delete(root);
         }
@@ -165,29 +165,29 @@ bool WebsocketProtocol::OpenAudioChannel() {
     });
 
     websocket_->OnDisconnected([this]() {
-        ESP_LOGI(TAG, "Websocket disconnected");
+        ESP_LOGI(TAG, "WebSocket连接已断开");
         if (on_audio_channel_closed_ != nullptr) {
             on_audio_channel_closed_();
         }
     });
 
-    ESP_LOGI(TAG, "Connecting to websocket server: %s with version: %d", url.c_str(), version_);
+    ESP_LOGI(TAG, "正在连接WebSocket服务器: %s，协议版本: %d", url.c_str(), version_);
     if (!websocket_->Connect(url.c_str())) {
-        ESP_LOGE(TAG, "Failed to connect to websocket server, code=%d", websocket_->GetLastError());
+        ESP_LOGE(TAG, "连接WebSocket服务器失败，错误码=%d", websocket_->GetLastError());
         SetError(Lang::Strings::SERVER_NOT_CONNECTED);
         return false;
     }
 
-    // Send hello message to describe the client
+    // 发送问候消息描述客户端信息
     auto message = GetHelloMessage();
     if (!SendText(message)) {
         return false;
     }
 
-    // Wait for server hello
+    // 等待服务器问候响应
     EventBits_t bits = xEventGroupWaitBits(event_group_handle_, WEBSOCKET_PROTOCOL_SERVER_HELLO_EVENT, pdTRUE, pdFALSE, pdMS_TO_TICKS(10000));
     if (!(bits & WEBSOCKET_PROTOCOL_SERVER_HELLO_EVENT)) {
-        ESP_LOGE(TAG, "Failed to receive server hello");
+        ESP_LOGE(TAG, "未能收到服务器问候消息");
         SetError(Lang::Strings::SERVER_TIMEOUT);
         return false;
     }
@@ -200,7 +200,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
 }
 
 std::string WebsocketProtocol::GetHelloMessage() {
-    // keys: message type, version, audio_params (format, sample_rate, channels)
+    // 键名: 消息类型、版本、音频参数（格式、采样率、声道数）
     cJSON* root = cJSON_CreateObject();
     cJSON_AddStringToObject(root, "type", "hello");
     cJSON_AddNumberToObject(root, "version", version_);
@@ -227,14 +227,14 @@ std::string WebsocketProtocol::GetHelloMessage() {
 void WebsocketProtocol::ParseServerHello(const cJSON* root) {
     auto transport = cJSON_GetObjectItem(root, "transport");
     if (transport == nullptr || strcmp(transport->valuestring, "websocket") != 0) {
-        ESP_LOGE(TAG, "Unsupported transport: %s", transport->valuestring);
+        ESP_LOGE(TAG, "不支持的传输协议: %s", transport->valuestring);
         return;
     }
 
     auto session_id = cJSON_GetObjectItem(root, "session_id");
     if (cJSON_IsString(session_id)) {
         session_id_ = session_id->valuestring;
-        ESP_LOGI(TAG, "Session ID: %s", session_id_.c_str());
+        ESP_LOGI(TAG, "会话ID: %s", session_id_.c_str());
     }
 
     auto audio_params = cJSON_GetObjectItem(root, "audio_params");

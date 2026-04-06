@@ -17,7 +17,7 @@ extern "C" void app_main(void)
     // 初始化默认事件循环
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // 初始化用于WiFi配置的NVS闪存
+    // 初始化用于WiFi配置的NVS flash
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "擦除NVS闪存以修复损坏问题");

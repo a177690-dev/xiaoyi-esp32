@@ -47,15 +47,15 @@ bool AfeWakeWord::Initialize(AudioCodec* codec, srmodel_list_t* models_list) {
     }
 
     if (models_ == nullptr || models_->num == -1) {
-        ESP_LOGE(TAG, "Failed to initialize wakenet model");
+        ESP_LOGE(TAG, "初始化唤醒词模型失败");
         return false;
     }
     for (int i = 0; i < models_->num; i++) {
-        ESP_LOGI(TAG, "Model %d: %s", i, models_->model_name[i]);
+        ESP_LOGI(TAG, "模型 %d: %s", i, models_->model_name[i]);
         if (strstr(models_->model_name[i], ESP_WN_PREFIX) != NULL) {
             wakenet_model_ = models_->model_name[i];
             auto words = esp_srmodel_get_wake_words(models_, wakenet_model_);
-            // split by ";" to get all wake words
+            // 使用 ";" 分割获取所有唤醒词
             std::stringstream ss(words);
             std::string word;
             while (std::getline(ss, word, ';')) {
@@ -122,7 +122,7 @@ size_t AfeWakeWord::GetFeedSize() {
 void AfeWakeWord::AudioDetectionTask() {
     auto fetch_size = afe_iface_->get_fetch_chunksize(afe_data_);
     auto feed_size = afe_iface_->get_feed_chunksize(afe_data_);
-    ESP_LOGI(TAG, "Audio detection task started, feed size: %d fetch size: %d",
+    ESP_LOGI(TAG, "音频检测任务已启动，输入块大小: %d 输出块大小: %d",
         feed_size, fetch_size);
 
     while (true) {
@@ -133,7 +133,7 @@ void AfeWakeWord::AudioDetectionTask() {
             continue;;
         }
 
-        // Store the wake word data for voice recognition, like who is speaking
+        // 存储唤醒词数据用于语音识别，例如识别说话人身份
         StoreWakeWordData(res->data, res->data_size / sizeof(int16_t));
 
         if (res->wakeup_state == WAKENET_DETECTED) {
@@ -148,9 +148,9 @@ void AfeWakeWord::AudioDetectionTask() {
 }
 
 void AfeWakeWord::StoreWakeWordData(const int16_t* data, size_t samples) {
-    // store audio data to wake_word_pcm_
+    // 将音频数据存储到 wake_word_pcm_
     wake_word_pcm_.emplace_back(std::vector<int16_t>(data, data + samples));
-    // keep about 2 seconds of data, detect duration is 30ms (sample_rate == 16000, chunksize == 512)
+    // 保留约2秒的数据，检测时长为30ms（采样率16000，块大小512）
     while (wake_word_pcm_.size() > 2000 / 30) {
         wake_word_pcm_.pop_front();
     }
@@ -173,7 +173,7 @@ void AfeWakeWord::EncodeWakeWordData() {
         {
             auto start_time = esp_timer_get_time();
             auto encoder = std::make_unique<OpusEncoderWrapper>(16000, 1, OPUS_FRAME_DURATION_MS);
-            encoder->SetComplexity(0); // 0 is the fastest
+            encoder->SetComplexity(0); // 0 是最快的编码速度
 
             int packets = 0;
             for (auto& pcm: this_->wake_word_pcm_) {
@@ -187,7 +187,7 @@ void AfeWakeWord::EncodeWakeWordData() {
             this_->wake_word_pcm_.clear();
 
             auto end_time = esp_timer_get_time();
-            ESP_LOGI(TAG, "Encode wake word opus %d packets in %ld ms", packets, (long)((end_time - start_time) / 1000));
+            ESP_LOGI(TAG, "编码唤醒词Opus数据 %d 个包，耗时 %ld 毫秒", packets, (long)((end_time - start_time) / 1000));
 
             std::lock_guard<std::mutex> lock(this_->wake_word_mutex_);
             this_->wake_word_opus_.push_back(std::vector<uint8_t>());
